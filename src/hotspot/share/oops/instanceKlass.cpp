@@ -92,7 +92,6 @@
 #include "c1/c1_Compiler.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #endif
 
