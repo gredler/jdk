@@ -76,9 +76,10 @@ public class OutlineTextRenderer implements TextPipe {
         if ("".equals(str)) {
             return; // TextLayout constructor throws IAE on "".
         }
-        TextLayout tl = new TextLayout(str, g2d.getFont(),
-                                       g2d.getFontRenderContext());
-        Shape s = tl.getOutline(AffineTransform.getTranslateInstance(x, y));
+
+        TextLayout tl = new TextLayout(str, g2d.getFont(), g2d.getFontRenderContext());
+        Shape s = tl.getOutline(null);
+        s = AffineTransform.getTranslateInstance(x, y).createTransformedShape(s);
 
         int textAAHint = g2d.getFontInfo().aaHint;
 
