@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6425068 7157659 8132890
+ * @bug 6425068 7157659 8132890 8145901 8269888
  * @key printer
  * @summary Confirm that text prints where we expect to the length we expect.
  * @library /java/awt/regtesthelpers
@@ -170,6 +170,14 @@ public class PrintTextTest extends Component implements Printable {
         book.append(ptt, portrait);
         book.append(ptt, landscape);
 
+        font = new Font("Dialog", Font.PLAIN, 1);
+        name = "Page " + page++;
+        ptt = new PrintTHText(name, font, null, true);
+        p.add(ptt, BorderLayout.CENTER);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
         if (System.getProperty("os.name").startsWith("Windows")) {
             font = new Font("MS Gothic", Font.PLAIN, 12);
             name = "Page " + page++;
@@ -252,7 +260,7 @@ public class PrintTextTest extends Component implements Printable {
         textFont = font;
         this.gxTx = gxTx;
         this.useFM = fm;
-        setBackground(Color.white);
+        setBackground(Color.WHITE);
     }
 
     public static AttributedCharacterIterator getIterator(String s) {
@@ -288,7 +296,7 @@ public class PrintTextTest extends Component implements Printable {
     public void paint(Graphics g) {
 
         /* fill with white before any transformation is applied */
-        g.setColor(Color.white);
+        g.setColor(Color.WHITE);
         g.fillRect(0, 0, getSize().width, getSize().height);
 
         Graphics2D g2d = (Graphics2D) g;
@@ -306,7 +314,7 @@ public class PrintTextTest extends Component implements Printable {
         String s;
         int LS = 30;
         int ix=10, iy=LS+10;
-        g.setColor(Color.black);
+        g.setColor(Color.BLACK);
 
         s = "drawString(String str, int x, int y)";
         g.drawString(s, ix, iy);
@@ -401,8 +409,7 @@ public class PrintTextTest extends Component implements Printable {
 
 class PrintJAText extends PrintTextTest {
 
-    public PrintJAText(String page, Font font, AffineTransform gxTx,
-                         boolean fm) {
+    public PrintJAText(String page, Font font, AffineTransform gxTx, boolean fm) {
         super(page, font, gxTx, fm);
     }
 
@@ -413,7 +420,7 @@ class PrintJAText extends PrintTextTest {
     public void paint(Graphics g) {
 
         /* fill with white before any transformation is applied */
-        g.setColor(Color.white);
+        g.setColor(Color.WHITE);
         g.fillRect(0, 0, getSize().width, getSize().height);
 
         Graphics2D g2d = (Graphics2D) g;
@@ -426,7 +433,7 @@ class PrintJAText extends PrintTextTest {
         }
 
         String text = TEXT + TEXT + TEXT;
-        g.setColor(Color.black);
+        g.setColor(Color.BLACK);
         int y = 20;
         float origSize = 7f;
         for (int i=0;i<11;i++) {
@@ -440,5 +447,57 @@ class PrintJAText extends PrintTextTest {
             g.drawString(text, 0, y);
             y +=10;
         }
+    }
+}
+
+class PrintTHText extends PrintTextTest {
+
+    public PrintTHText(String page, Font font, AffineTransform gxTx, boolean fm) {
+        super(page, font, gxTx, fm);
+    }
+
+    public void paint(Graphics g) {
+
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, getSize().width, getSize().height);
+
+        Graphics2D g2d = (Graphics2D) g;
+        if (gxTx != null) {
+            g2d.transform(gxTx);
+        }
+        if (useFM) {
+            g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                                 RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        }
+
+        String text = "\u0e27\u0e31\u0e0a\u0e23\u0e34\u0e19 \u0e40\u0e2b\u0e25\u0e37\u0e2d\u0e25\u0e49\u0e19";
+        g.setColor(Color.BLACK);
+
+        int y = 50;
+        drawLine(text, g2d, textFont, 30, 30, y);
+
+        y += 80;
+        drawLine(text, g2d, textFont, 30, 60, y);
+
+        y += 80;
+        drawLine(text, g2d, textFont, 40, 20, y);
+    }
+
+    private static void drawLine(String text, Graphics2D g2d, Font font, float sizeX, float sizeY, int y) {
+        // draw text using font derived from simple float size
+        Font f = font.deriveFont(sizeX);
+        g2d.setFont(f);
+        FontMetrics fontMetrics = g2d.getFontMetrics();
+        int stringWidth = fontMetrics.stringWidth(text);
+        g2d.drawLine(0, y + 1, stringWidth, y + 1);
+        g2d.drawString(text, 0, y);
+        // now draw text (on same line) using font derived from a scaling affine transform
+        Font f2 = font.deriveFont(AffineTransform.getScaleInstance(sizeX, sizeY));
+        g2d.setFont(f2);
+        FontMetrics fontMetrics2 = g2d.getFontMetrics();
+        int stringWidth2 = fontMetrics2.stringWidth(text);
+        int x = stringWidth + 30;
+        g2d.drawLine(x, y + 1, x + stringWidth2, y + 1);
+        g2d.drawString(text, x, y);
     }
 }

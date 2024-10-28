@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ JDKEXPORT void HBDisposeFace(hb_face_t* face) {
 
 hb_font_t* jdk_font_create_hbp(
                hb_face_t* face,
-               float ptSize, float devScale,
+               float xPtSize, float yPtSize,
                hb_destroy_func_t destroy,
                hb_font_funcs_t *font_funcs) {
 
@@ -233,8 +233,8 @@ hb_font_t* jdk_font_create_hbp(
                       NULL,
                       (hb_destroy_func_t)_do_nothing);
     hb_font_set_scale(font,
-                      HBFloatToFixed(ptSize*devScale),
-                      HBFloatToFixed(ptSize*devScale));
+                      HBFloatToFixed(xPtSize),
+                      HBFloatToFixed(yPtSize));
     return font;
 }
 

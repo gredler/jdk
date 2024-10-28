@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,13 +209,13 @@ public final class GlyphLayout {
     }
 
     private static final class SDCache {
-        public Font key_font;
-        public FontRenderContext key_frc;
+        public final Font key_font;
+        public final FontRenderContext key_frc;
 
-        public AffineTransform dtx;
-        public AffineTransform gtx;
-        public Point2D.Float delta;
-        public FontStrikeDesc sd;
+        public final AffineTransform dtx; // device
+        public final AffineTransform ftx; // font (including pt size)
+        public final Point2D.Float delta;
+        public final FontStrikeDesc sd;
 
         private SDCache(Font font, FontRenderContext frc) {
             key_font = font;
@@ -223,13 +223,21 @@ public final class GlyphLayout {
 
             // !!! add getVectorTransform and hasVectorTransform to frc?  then
             // we could just skip this work...
-
             dtx = frc.getTransform();
             dtx.setTransform(dtx.getScaleX(), dtx.getShearY(),
                              dtx.getShearX(), dtx.getScaleY(),
                              0, 0);
 
+            // font transform
             float ptSize = font.getSize2D();
+            ftx = font.getTransform();
+            ftx.scale(ptSize, ptSize);
+            ftx.setTransform(ftx.getScaleX(), ftx.getShearY(),
+                             ftx.getShearX(), ftx.getScaleY(),
+                             0, 0);
+
+            // glyph transform = device transform + font transform (including pt size)
+            AffineTransform gtx;
             if (font.isTransformed()) {
                 gtx = font.getTransform();
                 gtx.scale(ptSize, ptSize);
@@ -373,10 +381,10 @@ public final class GlyphLayout {
         // use cache now - can we use the strike cache for this?
 
         SDCache txinfo = SDCache.get(font, frc);
-        _mat[0] = (float)txinfo.gtx.getScaleX();
-        _mat[1] = (float)txinfo.gtx.getShearY();
-        _mat[2] = (float)txinfo.gtx.getShearX();
-        _mat[3] = (float)txinfo.gtx.getScaleY();
+        _mat[0] = (float)txinfo.ftx.getScaleX();
+        _mat[1] = (float)txinfo.ftx.getShearY();
+        _mat[2] = (float)txinfo.ftx.getShearX();
+        _mat[3] = (float)txinfo.ftx.getScaleY();
         _pt.setLocation(txinfo.delta);
         ptSize = font.getSize2D();
 

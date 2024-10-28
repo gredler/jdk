@@ -192,7 +192,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         } else {
             long pFace = getFacePtr(font);
             if (pFace != 0) {
-                shape(font, strike, ptSize, mat, pFace,
+                shape(font, strike, mat, pFace,
                     tr.text, data, key.script(),
                     tr.start, tr.limit, baseIndex, pt,
                     typo_flags, gmask);
@@ -202,7 +202,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
     /* Native method to invoke harfbuzz layout engine */
     private static native boolean
-        shape(Font2D font, FontStrike strike, float ptSize, float[] mat,
+        shape(Font2D font, FontStrike strike, float[] mat,
               long pFace,
               char[] chars, GVData data,
               int script, int offset, int limit,

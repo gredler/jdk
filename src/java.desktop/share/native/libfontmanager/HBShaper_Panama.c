@@ -64,7 +64,6 @@ static float euclidianDistance(float a, float b)
 #define TYPO_RTL  0x80000000
 
 JDKEXPORT void jdk_hb_shape(
-     float ptSize,
      float *matrix,
      void* pFace,
      unsigned short *chars,
@@ -94,16 +93,11 @@ JDKEXPORT void jdk_hb_shape(
      char* liga = (flags & TYPO_LIGA) ? "liga" : "-liga";
      unsigned int buflen;
 
-     float devScale = 1.0f;
-     if (getenv("HB_NODEVTX") != NULL) {
-         float xPtSize = euclidianDistance(matrix[0], matrix[1]);
-         devScale = xPtSize / ptSize;
-     }
+     float xPtSize = euclidianDistance(matrix[0], matrix[1]);
+     float yPtSize = euclidianDistance(matrix[2], matrix[3]);
 
      hbface = (hb_face_t*)pFace;
-     hbfont = jdk_font_create_hbp(hbface,
-                                  ptSize, devScale, NULL,
-                                  font_funcs);
+     hbfont = jdk_font_create_hbp(hbface, xPtSize, yPtSize, NULL, font_funcs);
 
      buffer = hb_buffer_create();
      hb_buffer_set_script(buffer, getHBScriptCode(script));
@@ -131,7 +125,7 @@ JDKEXPORT void jdk_hb_shape(
      glyphPos = hb_buffer_get_glyph_positions(buffer, &buflen);
 
      (*store_layout_results_fn)
-               (slot, baseIndex, offset, startX, startY, devScale,
+               (slot, baseIndex, offset, startX, startY,
                 charCount, glyphCount, glyphInfo, glyphPos);
 
      hb_buffer_destroy (buffer);
