@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -33,24 +35,23 @@ import javax.imageio.ImageIO;
 
 /*
  * @test
- * @bug 8339974
+ * @bug 8339974 7156751
  * @summary Verifies that text draws correctly using scaled and rotated fonts.
  */
 public class RotatedScaledFontTest {
 
     public static void main(String[] args) throws Exception {
-        test(0);
-        test(1);
-        test(2);
-        test(3);
-        test(4);
+        for (int i = 0; i <= 4; i++) {
+            test(i, true);
+            test(i, false);
+        }
     }
 
-    private static void test(int quadrants) throws Exception {
+    private static void test(int quadrants, boolean glyphVector) throws Exception {
 
         int size = 2000;
         int center = size / 2;
-        Font base = new Font("SansSerif", Font.PLAIN, 10);
+        Font base = new Font(Font.SANS_SERIF, Font.PLAIN, 10);
         BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_BYTE_BINARY);
         Graphics2D g2d = image.createGraphics();
 
@@ -63,12 +64,19 @@ public class RotatedScaledFontTest {
                 g2d.fillRect(0, 0, image.getWidth(), image.getHeight());
                 g2d.setColor(Color.BLACK);
                 g2d.setFont(font);
-                g2d.drawString("TEST", center, center);
+                if (glyphVector) {
+                    FontRenderContext frc = g2d.getFontRenderContext();
+                    GlyphVector gv = font.createGlyphVector(frc, "TEST");
+                    g2d.drawGlyphVector(gv, center, center);
+                } else {
+                    g2d.drawString("TEST", center, center);
+                }
                 Rectangle bounds = findTextBoundingBox(image);
                 if (bounds == null) {
                     saveImage("bounds", image);
                     throw new RuntimeException("Text missing: scale=" + scale
-                        + ", quadrants=" + quadrants + ", center=" + center);
+                        + ", quadrants=" + quadrants + ", center=" + center
+                        + ", glyphVector=" + glyphVector);
                 }
                 boolean horizontal = (bounds.width > bounds.height);
                 boolean expectedHorizontal = (quadrants % 2 == 0);
@@ -77,19 +85,20 @@ public class RotatedScaledFontTest {
                     throw new RuntimeException("Wrong orientation: scale=" + scale
                         + ", quadrants=" + quadrants + ", center=" + center
                         + ", bounds=" + bounds + ", horizontal=" + horizontal
-                        + ", expectedHorizontal=" + expectedHorizontal);
+                        + ", expectedHorizontal=" + expectedHorizontal
+                        + ", glyphVector=" + glyphVector);
                 }
                 if (!roughlyEqual(center, bounds.x, scale) && !roughlyEqual(center, bounds.x + bounds.width, scale)) {
                     saveImage("xedge", image);
                     throw new RuntimeException("No x-edge at center: scale=" + scale
                         + ", quadrants=" + quadrants + ", center=" + center
-                        + ", bounds=" + bounds);
+                        + ", bounds=" + bounds + ", glyphVector=" + glyphVector);
                 }
                 if (!roughlyEqual(center, bounds.y, scale) && !roughlyEqual(center, bounds.y + bounds.height, scale)) {
                     saveImage("yedge", image);
                     throw new RuntimeException("No y-edge at center: scale=" + scale
                         + ", quadrants=" + quadrants + ", center=" + center
-                        + ", bounds=" + bounds);
+                        + ", bounds=" + bounds + ", glyphVector=" + glyphVector);
                 }
             }
         } finally {
@@ -132,8 +141,8 @@ public class RotatedScaledFontTest {
         }
     }
 
-    private static boolean roughlyEqual(int x1, int x2, int scale) {
-        return Math.abs(x1 - x2) <= Math.ceil(scale / 2d) + 1; // higher scale = higher allowed variance
+    private static boolean roughlyEqual(int i1, int i2, int scale) {
+        return Math.abs(i1 - i2) <= Math.ceil(scale / 2d) + 1; // higher scale = higher allowed variance
     }
 
     private static void saveImage(String name, BufferedImage image) {
@@ -142,6 +151,7 @@ public class RotatedScaledFontTest {
             String path = dir + File.separator + name + ".png";
             File file = new File(path);
             ImageIO.write(image, "png", file);
+            System.out.println("Saved image to " + file.getAbsolutePath());
         } catch (Exception e) {
             // we tried, and that's enough
         }
