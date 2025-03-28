@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 7156751
+ * @summary Verifies various metrics when using a variety of transformations.
  */
 
 import java.awt.Font;
