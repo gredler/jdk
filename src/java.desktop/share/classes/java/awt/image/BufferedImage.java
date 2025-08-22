@@ -969,12 +969,15 @@ public class BufferedImage extends java.awt.Image
             rgbArray = new int[offset+h*scansize];
         }
 
-        for (int y = startY; y < startY+h; y++, yoff+=scansize) {
-            off = yoff;
-            for (int x = startX; x < startX+w; x++) {
-                rgbArray[off++] = colorModel.getRGB(raster.getDataElements(x,
-                                                                        y,
-                                                                        data));
+        if (imageType == TYPE_INT_ARGB && offset == 0) {
+            raster.getDataElements(startX, startY, w, h, rgbArray);
+        } else {
+            for (int y = startY; y < startY + h; y++, yoff += scansize) {
+                off = yoff;
+                for (int x = startX; x < startX + w; x++) {
+                    rgbArray[off++] =
+                        colorModel.getRGB(raster.getDataElements(x, y, data));
+                }
             }
         }
 
