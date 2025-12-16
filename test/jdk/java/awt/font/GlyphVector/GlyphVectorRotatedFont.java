@@ -54,8 +54,8 @@ public class GlyphVectorRotatedFont {
         Rectangle bounds2 = gv2.getVisualBounds().getBounds();
         Rectangle bounds3 = gv3.getVisualBounds().getBounds();
 
-        assertTaller(bounds2, bounds1);
-        assertTaller(bounds3, bounds1);
+        assertTaller(bounds2, bounds1, "visual bounds 1 vs 2");
+        assertTaller(bounds3, bounds1, "visual bounds 1 vs 3");
 
         int w = 500;
         int h = 500;
@@ -81,14 +81,15 @@ public class GlyphVectorRotatedFont {
 
         g2d.dispose();
 
-        assertTaller(pixelBounds2, pixelBounds1);
-        assertTaller(pixelBounds3, pixelBounds1);
+        assertTaller(pixelBounds2, pixelBounds1, "pixel bounds 1 vs 2");
+        assertTaller(pixelBounds3, pixelBounds1, "pixel bounds 1 vs 3");
     }
 
-    private static void assertTaller(Rectangle rotated, Rectangle unrotated) {
+    private static void assertTaller(Rectangle rotated, Rectangle unrotated, String description) {
         if (rotated.getHeight() < unrotated.getHeight() * 3) {
             throw new RuntimeException("Expected bounds " + rotated + " of rotated text " +
-                    "to be much taller than bounds " + unrotated + " of unrotated text.");
+                    "to be much taller than bounds " + unrotated + " of unrotated text (" +
+                    description + ")");
         }
     }
 
