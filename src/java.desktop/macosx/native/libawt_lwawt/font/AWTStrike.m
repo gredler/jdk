@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 @implementation AWTStrike
 
-static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 }; // vertical flip
+static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
 
 - (id) initWithFont:(AWTFont *)awtFont
                  tx:(CGAffineTransform)tx
@@ -49,13 +49,15 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 }; // vertical flip
         fAAStyle = aaStyle;
 
         fTx = tx; // composited glyph and device transform
-        fAltTx = CGAffineTransformConcat(tx, sInverseTX); // composited glyph and device transform, flipped vertically
+
+        fAltTx = tx;
+        fAltTx.b *= -1;
+        fAltTx.d *= -1;
 
         invDevTx.b *= -1;
         invDevTx.c *= -1;
-        CGAffineTransform inv = CGAffineTransformConcat(invDevTx, sInverseTX);
-        fFontTx = CGAffineTransformConcat(tx, inv);
-        fDevTx = CGAffineTransformInvert(inv);
+        fFontTx = CGAffineTransformConcat(CGAffineTransformConcat(tx, invDevTx), sInverseTX);
+        fDevTx = CGAffineTransformInvert(CGAffineTransformConcat(invDevTx, sInverseTX));
 
         // the "font size" is the square root of the determinant of the matrix
         fSize = sqrt(fabs(fFontTx.a * fFontTx.d - fFontTx.b * fFontTx.c));
@@ -77,8 +79,7 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 }; // vertical flip
                          aaStyle:(jint)aaStyle {
 
     return [[[AWTStrike alloc] initWithFont:awtFont
-                                         tx:tx
-                                   invDevTx:invDevTx
+                                         tx:tx invDevTx:invDevTx
                                       style:style
                                     aaStyle:aaStyle] autorelease];
 }
