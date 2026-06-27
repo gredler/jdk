@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 
 public abstract class PhysicalFont extends Font2D {
 
@@ -41,14 +42,13 @@ public abstract class PhysicalFont extends Font2D {
     protected Object nativeNames;
 
     public boolean equals(Object o) {
-        if (o == null || o.getClass() != this.getClass()) {
-            return false;
+        if (o == this) {
+            return true;
         }
-        PhysicalFont other = (PhysicalFont)o;
-        return
-           (this.fullName.equals(other.fullName)) &&
-            ((this.platName == null && other.platName == null) ||
-             (this.platName != null && this.platName.equals(other.platName)));
+        return o.getClass() == this.getClass() &&
+            o instanceof PhysicalFont other &&
+            fullName.equals(other.fullName) &&
+            Objects.equals(platName, other.platName);
     }
 
     public int hashCode() {
