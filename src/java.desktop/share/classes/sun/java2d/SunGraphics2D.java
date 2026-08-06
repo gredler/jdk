@@ -238,9 +238,9 @@ public final class SunGraphics2D
     public int constrainX;
     public int constrainY;
 
-    public Region clipRegion;
-    public Shape usrClip;
-    protected Region devClip;           // Actual physical drawable in pixels
+    public Region clipRegion;           // device clip + transformed user clip
+    public Shape usrClip;               // user clip, before user transform
+    protected Region devClip;           // actual physical drawable in pixels
 
     private int resolutionVariantHint;
 
@@ -500,6 +500,23 @@ public final class SunGraphics2D
         return intersectByArea(r, s, keep1, keep2);
     }
 
+    protected static Shape cloneShapeKeepType(Shape s) {
+        if (s == null) {
+            return null;
+        }
+        if (s instanceof Rectangle) {
+            return s.getBounds();
+        }
+        if (s instanceof Rectangle2D rect) {
+            return new Rectangle2D.Double(
+                rect.getX(),
+                rect.getY(),
+                rect.getWidth(),
+                rect.getHeight());
+        }
+        return cloneShape(s);
+    }
+
     protected static Shape cloneShape(Shape s) {
         return new GeneralPath(s);
     }
@@ -547,10 +564,8 @@ public final class SunGraphics2D
      */
     public Region getCompClip() {
         if (!surfaceData.isValid()) {
-            // revalidateAll() implicitly recalculcates the composite clip
-            revalidateAll();
+            revalidateAll(); // implicitly recalculates the composite clip
         }
-
         return clipRegion;
     }
 
@@ -1799,15 +1814,10 @@ public final class SunGraphics2D
 
     public Rectangle getClipBounds(Rectangle r) {
         if (clipState != CLIP_DEVICE) {
-            if (transformState <= TRANSFORM_INT_TRANSLATE) {
-                if (usrClip instanceof Rectangle usrClipRect) {
-                    r.setBounds(usrClipRect);
-                } else {
-                    r.setFrame(usrClip.getBounds2D());
-                }
-                r.translate(-transX, -transY);
+            if (usrClip instanceof Rectangle usrClipRect) {
+                r.setBounds(usrClipRect);
             } else {
-                r.setFrame(getClip().getBounds2D());
+                r.setFrame(usrClip.getBounds2D());
             }
         } else if (r == null) {
             throw new NullPointerException("null rectangle parameter");
@@ -1875,12 +1885,15 @@ public final class SunGraphics2D
     }
 
     protected void validateCompClip() {
-        int origClipState = clipState;
-        final Shape clip = usrClip;
+        final int origClipState = clipState;
+        final Shape clip = transformShape(usrClip);
 
         if (clip == null) {
             clipState = CLIP_DEVICE;
             clipRegion = devClip;
+        } else if (clip instanceof Rectangle rect) {
+            clipState = CLIP_RECTANGULAR;
+            clipRegion = devClip.getIntersection(rect);
         } else if (clip instanceof Rectangle2D rect2d) {
             clipState = CLIP_RECTANGULAR;
             clipRegion = devClip.getIntersection(rect2d);
@@ -1948,6 +1961,7 @@ public final class SunGraphics2D
             r.translate(tx, ty);
             return r;
         }
+
         if (s instanceof Rectangle2D rect) {
             return new Rectangle2D.Double(rect.getX() + tx,
                                           rect.getY() + ty,
@@ -2015,11 +2029,11 @@ public final class SunGraphics2D
     }
 
     public Shape getClip() {
-        return untransformShape(usrClip);
+        return cloneShapeKeepType(usrClip);
     }
 
     public void setClip(Shape sh) {
-        usrClip = transformShape(sh);
+        usrClip = cloneShapeKeepType(sh);
         validateCompClip();
     }
 
@@ -2032,11 +2046,11 @@ public final class SunGraphics2D
      * @param s The Path to be intersected with the current clip.
      */
     public void clip(Shape s) {
-        s = transformShape(s);
+        Shape clone = cloneShapeKeepType(s);
         if (usrClip != null) {
-            s = intersectShapes(usrClip, s, true, true);
+            clone = intersectShapes(usrClip, clone, true, true);
         }
-        usrClip = s;
+        usrClip = clone;
         validateCompClip();
     }
 
